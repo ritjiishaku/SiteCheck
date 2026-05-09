@@ -1,0 +1,280 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model MedicProfile {
+  medic_id      String   @id @default(uuid())
+  full_name     String
+  email         String
+  email_hash    String   @unique
+  password_hash String
+  phone_number  String?
+  role          Role     @default(Medic)
+  company_name  String
+  site_location String?
+  license_number String?
+  is_active            Boolean   @default(true)
+  failed_login_attempts Int      @default(0)
+  locked_until         DateTime?
+  created_at           DateTime @default(now())
+  last_login           DateTime?
+
+  patientRecords   PatientRecord[]
+  consultationLogs ConsultationLog[]
+  reports          Report[]
+  auditLogs        AuditLog[]
+
+  @@index([company_name])
+  @@index([role])
+  @@map("medic_profiles")
+}
+
+enum Role {
+  Medic
+  Manager
+  Admin
+  SuperAdmin
+  @@map("role")
+}
+
+model PatientRecord {
+  patient_id         String       @id @default(uuid())
+  full_name          String
+  staff_code         String
+  serial_number      String?
+  age                Int
+  gender             Gender
+  department         String
+  company_name       String
+  date_of_visit      DateTime
+  time_of_visit      DateTime
+  vital_signs        Json?
+  complaints         String
+  diagnosis          String
+  treatment          String
+  drugs_dispensed    Json         @default("[]")
+  attending_medic_id String
+  status             RecordStatus @default(Active)
+  synced             Boolean      @default(true)
+  created_at         DateTime     @default(now())
+  updated_at         DateTime     @updatedAt
+
+  medic          MedicProfile      @relation(fields: [attending_medic_id], references: [medic_id], onDelete: NoAction)
+  consultationLogs ConsultationLog[]
+
+  @@index([company_name])
+  @@index([attending_medic_id])
+  @@index([date_of_visit])
+  @@index([status])
+  @@index([company_name, date_of_visit])
+  @@index([synced])
+  @@map("patient_records")
+}
+
+enum Gender {
+  Male
+  Female
+  Other
+  @@map("gender")
+}
+
+enum RecordStatus {
+  Active
+  Archived
+  @@map("record_status")
+}
+
+model DrugInventory {
+  drug_id            String   @id @default(uuid())
+  drug_name          String
+  category           String?
+  unit               String
+  company_name       String
+  quantity_in_stock  Int      @default(0)
+  low_stock_threshold Int    @default(10)
+  cost_per_unit      Int?
+  is_archived        Boolean  @default(false)
+  expiry_date        DateTime?
+  supplier_name      String?
+  last_restocked_at  DateTime?
+  updated_at         DateTime @updatedAt
+
+  @@index([company_name])
+  @@index([expiry_date])
+  @@index([company_name, quantity_in_stock])
+  @@map("drug_inventory")
+}
+
+model ConsultationLog {
+  log_id           String   @id @default(uuid())
+  patient_id       String
+  medic_id         String
+  company_name     String
+  shift            Shift
+  date             DateTime
+  total_drugs_used Json?    @default("[]")
+  notes            String?
+  synced           Boolean  @default(true)
+  created_at       DateTime @default(now())
+
+  patient PatientRecord @relation(fields: [patient_id], references: [patient_id], onDelete: NoAction)
+  medic   MedicProfile  @relation(fields: [medic_id], references: [medic_id], onDelete: NoAction)
+
+  @@index([company_name])
+  @@index([medic_id])
+  @@index([date])
+  @@index([synced])
+  @@index([company_name, date])
+  @@map("consultation_logs")
+}
+
+enum Shift {
+  Morning
+  Afternoon
+  Night
+  @@map("shift")
+}
+
+model Report {
+  report_id           String       @id @default(uuid())
+  generated_by        String
+  report_type         ReportType
+  date_from           DateTime
+  date_to             DateTime
+  company_name        String
+  total_patients_seen Int          @default(0)
+  total_drugs_used    Json?        @default("[]")
+  medic_breakdown     Json?        @default("[]")
+  export_format       ExportFormat
+  sent_via_email      Boolean      @default(false)
+  recipient_email     String?
+  status              ReportStatus @default(Pending)
+  created_at          DateTime     @default(now())
+
+  generator MedicProfile @relation(fields: [generated_by], references: [medic_id])
+
+  @@index([company_name])
+  @@index([status])
+  @@index([generated_by])
+  @@map("reports")
+}
+
+enum ReportType {
+  Daily
+  Weekly
+  Monthly
+  Custom
+  @@map("report_type")
+}
+
+enum ExportFormat {
+  PDF
+  Excel
+  @@map("export_format")
+}
+
+enum ReportStatus {
+  Pending
+  Sent
+  Failed
+  @@map("report_status")
+}
+
+model AuditLog {
+  audit_id          String   @id @default(uuid())
+  performed_by      String
+  action            String
+  target_record_id  String?
+  target_record_type String?
+  ip_address        String?
+  device_info       String?
+  timestamp         DateTime @default(now())
+
+  performer MedicProfile @relation(fields: [performed_by], references: [medic_id])
+
+  @@index([performed_by])
+  @@index([target_record_id, target_record_type])
+  @@index([timestamp])
+  @@map("audit_logs")
+}
+
+model SyncQueue {
+  queue_id     String         @id @default(uuid())
+  table_name   String
+  record_id    String
+  operation    SyncOperation
+  payload      Json
+  attempts     Int            @default(0)
+  max_attempts Int            @default(3)
+  last_error   String?
+  created_at   DateTime       @default(now())
+  synced_at    DateTime?
+  locked_at    DateTime?
+  expires_at   DateTime?
+
+  @@index([synced_at])
+  @@index([created_at])
+  @@index([locked_at])
+  @@index([expires_at])
+  @@map("sync_queue")
+}
+
+model Subscription {
+  subscription_id String         @id @default(uuid())
+  company_name    String         @unique
+  plan            String
+  status          SubscriptionStatus @default(Inactive)
+  current_period_start DateTime?
+  current_period_end   DateTime?
+  flutterwave_tx_ref          String?
+  flutterwave_transaction_id String?
+  amount_paid     Int?
+  currency        String         @default("NGN")
+  created_at      DateTime       @default(now())
+  updated_at      DateTime       @updatedAt
+
+  @@index([company_name])
+  @@index([status])
+  @@index([flutterwave_tx_ref])
+  @@map("subscriptions")
+}
+
+enum SubscriptionStatus {
+  Active
+  Inactive
+  PastDue
+  Cancelled
+  @@map("subscription_status")
+}
+
+model PaymentEvent {
+  event_id    String   @id @default(uuid())
+  company_name String
+  event_type  String
+  tx_ref      String?
+  transaction_id String?
+  amount      Int?
+  currency    String?
+  status      String
+  customer_email String?
+  meta        Json?
+  created_at  DateTime @default(now())
+
+  @@index([company_name])
+  @@index([tx_ref])
+  @@index([transaction_id])
+  @@index([created_at])
+  @@map("payment_events")
+}
+
+enum SyncOperation {
+  CREATE
+  UPDATE
+  ARCHIVE
+  @@map("sync_operation")
+}

@@ -1,0 +1,97 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+@import "tailwindcss";
+@config "../../tailwind.config.ts";
+
+:root {
+  --color-primary: hsl(163, 72%, 36%);
+  --color-on-primary: hsl(0, 0%, 100%);
+  --color-primary-container: hsl(158, 62%, 63%);
+  --color-on-primary-container: hsl(164, 100%, 16%);
+  --color-secondary: hsl(100, 100%, 21%);
+  --color-on-secondary: hsl(0, 0%, 100%);
+  --color-secondary-container: hsl(101, 63%, 62%);
+  --color-on-secondary-container: hsl(101, 100%, 16%);
+  --color-tertiary: hsl(38, 100%, 26%);
+  --color-on-tertiary: hsl(0, 0%, 100%);
+  --color-tertiary-container: hsl(35, 100%, 68%);
+  --color-on-tertiary-container: hsl(38, 100%, 20%);
+  --color-error: hsl(4, 81%, 54%);
+  --color-on-error: hsl(0, 0%, 100%);
+  --color-error-container: hsl(4, 70%, 82%);
+  --color-on-error-container: hsl(4, 100%, 22%);
+  --color-background: hsl(220, 100%, 98%);
+  --color-on-background: hsl(205, 58%, 10%);
+  --color-surface: hsl(220, 100%, 98%);
+  --color-on-surface: hsl(205, 58%, 10%);
+  --color-surface-variant: hsl(40, 10%, 88%);
+  --color-on-surface-variant: hsl(60, 2%, 27%);
+  --color-outline: hsl(60, 1%, 46%);
+  --color-outline-variant: hsl(36, 4%, 77%);
+  --color-inverse-surface: hsl(206, 31%, 19%);
+  --color-inverse-on-surface: hsl(211, 100%, 95%);
+  --color-inverse-primary: hsl(158, 62%, 63%);
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background-color: #F4F6F8;
+  color: #3A4A58;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Prevent iOS zoom on input focus — font-size must be >= 16px on mobile */
+@media screen and (max-width: 768px) {
+  input, select, textarea, .input-mobile-safe {
+    font-size: 16px !important;
+  }
+}
+
+/* Eliminate 300ms tap delay on all interactive elements */
+a, button, input, select, textarea, [role="button"], [tabindex] {
+  touch-action: manipulation;
+}
+
+/* PWA safe area padding for fixed/sticky elements */
+.safe-area-top {
+  padding-top: var(--safe-area-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: var(--safe-area-bottom);
+}
+
+/* Smooth scrollbar for mobile overlay scroll */
+.overscroll-contain {
+  overscroll-behavior: contain;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
