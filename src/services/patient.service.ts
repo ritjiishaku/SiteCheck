@@ -25,7 +25,7 @@ interface CreatePatientInput {
     height?: number
     BMI?: number
   }
-  drugs_dispensed?: { drug_id: string; drug_name?: string; quantity_dispensed: number; unit?: string }[]
+  drugs_dispensed?: { drug_id?: string; drug_name?: string; quantity_dispensed: number; unit?: string }[]
 }
 
 function calculateBMI(weight?: number, height?: number): number | undefined {
