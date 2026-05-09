@@ -1,8 +1,6 @@
-import { PrismaClient } from '@prisma/client'
 import type { DrugInventory } from '@prisma/client'
 import type { ServiceResult } from '@/types'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/db'
 
 export async function deductStock(drugId: string, quantity: number): Promise<ServiceResult<{ quantity_in_stock: number }>> {
   try {

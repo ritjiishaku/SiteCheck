@@ -1,8 +1,7 @@
-import { PrismaClient, Gender } from '@prisma/client'
+import { Gender } from '@prisma/client'
 import type { ServiceResult } from '@/types'
 import { encrypt, decrypt } from '@/lib/encryption'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/db'
 
 interface CreatePatientInput {
   full_name: string

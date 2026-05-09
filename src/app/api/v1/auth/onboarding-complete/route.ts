@@ -1,11 +1,8 @@
 import { requireAuth, requireRole } from '@/lib/rbac/guards'
 import { handleRouteError } from '@/lib/api/error-handler'
 import { hashPassword } from '@/services/auth.service'
-import { PrismaClient } from '@prisma/client'
 import crypto from 'crypto'
-
-const prisma = new PrismaClient()
-const DEFAULT_TEMP_PASSWORD = 'Temp123!'
+import { prisma } from '@/lib/db'
 
 function generateEmailHash(email: string): string {
   return crypto.createHash('sha256').update(email.toLowerCase().trim()).digest('hex')
@@ -14,7 +11,7 @@ function generateEmailHash(email: string): string {
 export async function POST(req: Request) {
   try {
     const user = await requireAuth(req)
-    await requireRole(user, ['Medic', 'Manager', 'Admin'])
+    await requireRole(user, ['Admin'])
 
     const body = await req.json()
     const { company_name, site_location, team, drugs } = body
@@ -27,7 +24,8 @@ export async function POST(req: Request) {
     }
 
     if (team?.length) {
-      const passwordHash = await hashPassword(DEFAULT_TEMP_PASSWORD)
+      const tempPassword = crypto.randomBytes(16).toString('hex')
+      const passwordHash = await hashPassword(tempPassword)
       for (const member of team) {
         if (!member.name || !member.email) continue
         const emailHash = generateEmailHash(member.email)

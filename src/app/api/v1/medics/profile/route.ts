@@ -1,8 +1,6 @@
 import { requireAuth, requireRole } from '@/lib/rbac/guards'
 import { handleRouteError } from '@/lib/api/error-handler'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/db'
 
 export async function PATCH(req: Request) {
   try {

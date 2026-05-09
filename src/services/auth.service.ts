@@ -1,9 +1,8 @@
-import { PrismaClient, Role } from '@prisma/client'
+import { Role } from '@prisma/client'
 import { sign } from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/db'
 
 const SALT_ROUNDS = 12
 const MAX_LOGIN_ATTEMPTS = 5

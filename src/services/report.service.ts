@@ -1,11 +1,10 @@
-import { PrismaClient, ReportType, ExportFormat } from '@prisma/client'
+import { ReportType, ExportFormat } from '@prisma/client'
 import type { ServiceResult } from '@/types'
 import { generatePdf } from './pdf.service'
 import { generateExcel } from './excel.service'
 import { sendReportEmail } from './email.service'
 import { format } from 'date-fns'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/db'
 
 interface GenerateReportInput {
   generated_by: string
