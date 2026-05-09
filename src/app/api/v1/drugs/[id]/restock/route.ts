@@ -13,7 +13,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (!quantity || quantity < 1) {
       return Response.json({ success: false, error: 'Quantity must be at least 1.' }, { status: 422 })
     }
-    const result = await restockDrug(id, quantity)
+    const result = await restockDrug(id, user.company_name, quantity)
     if (result.success) {
       await log({
         performed_by: user.medic_id,

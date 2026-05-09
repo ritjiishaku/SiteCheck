@@ -2,6 +2,7 @@ import { requireAuth, requireRole } from '@/lib/rbac/guards'
 import { handleRouteError } from '@/lib/api/error-handler'
 import { updateDrug, archiveDrug } from '@/services/drug.service'
 import { log } from '@/services/audit.service'
+import { DrugUpdateSchema } from '@/lib/validation/drug'
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -9,7 +10,11 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const user = await requireAuth(req)
     await requireRole(user, ['Admin'])
     const body = await req.json()
-    const result = await updateDrug(id, body)
+    const parsed = DrugUpdateSchema.safeParse(body)
+    if (!parsed.success) {
+      return Response.json({ success: false, error: parsed.error.errors[0]?.message || 'Invalid input.' }, { status: 422 })
+    }
+    const result = await updateDrug(id, user.company_name, parsed.data)
     if (result.success) {
       await log({
         performed_by: user.medic_id,

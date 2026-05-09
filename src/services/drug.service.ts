@@ -31,10 +31,10 @@ export async function listByCompany(company_name: string): Promise<ServiceResult
   }
 }
 
-export async function updateDrug(drugId: string, data: Record<string, unknown>): Promise<ServiceResult<DrugInventory>> {
+export async function updateDrug(drugId: string, company_name: string, data: Record<string, unknown>): Promise<ServiceResult<DrugInventory>> {
   try {
     const drug = await prisma.drugInventory.update({
-      where: { drug_id: drugId },
+      where: { drug_id: drugId, company_name },
       data,
     })
     return { success: true, data: drug }
@@ -59,10 +59,10 @@ export async function removeDrug(drugId: string): Promise<ServiceResult<void>> {
   return archiveDrug(drugId)
 }
 
-export async function restockDrug(drugId: string, quantity: number): Promise<ServiceResult<DrugInventory>> {
+export async function restockDrug(drugId: string, company_name: string, quantity: number): Promise<ServiceResult<DrugInventory>> {
   try {
     const drug = await prisma.drugInventory.update({
-      where: { drug_id: drugId },
+      where: { drug_id: drugId, company_name },
       data: {
         quantity_in_stock: { increment: quantity },
         last_restocked_at: new Date(),

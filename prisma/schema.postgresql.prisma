@@ -10,7 +10,7 @@ datasource db {
 model MedicProfile {
   medic_id      String   @id @default(uuid())
   full_name     String
-  email         String
+  email         String   @unique
   email_hash    String   @unique
   password_hash String
   phone_number  String?

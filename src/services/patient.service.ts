@@ -39,36 +39,43 @@ export async function create(input: CreatePatientInput): Promise<ServiceResult<{
     const bmi = calculateBMI(input.vital_signs?.weight, input.vital_signs?.height)
     const vitalSigns = input.vital_signs ? { ...input.vital_signs, BMI: bmi } : undefined
 
-    const record = await prisma.patientRecord.create({
-      data: {
-        full_name: encrypt(input.full_name),
-        staff_code: input.staff_code,
-        age: input.age,
-        gender: input.gender as Gender,
-        department: input.department,
-        company_name: input.company_name,
-        date_of_visit: new Date(),
-        time_of_visit: new Date(),
-        complaints: encrypt(input.complaints),
-        diagnosis: encrypt(input.diagnosis),
-        treatment: encrypt(input.treatment),
-        attending_medic_id: input.attending_medic_id,
-        vital_signs: vitalSigns ?? undefined,
-        drugs_dispensed: input.drugs_dispensed ?? [],
-      },
+    const result = await prisma.$transaction(async (tx) => {
+      const record = await tx.patientRecord.create({
+        data: {
+          full_name: encrypt(input.full_name),
+          staff_code: input.staff_code,
+          age: input.age,
+          gender: input.gender as Gender,
+          department: input.department,
+          company_name: input.company_name,
+          date_of_visit: new Date(),
+          time_of_visit: new Date(),
+          complaints: encrypt(input.complaints),
+          diagnosis: encrypt(input.diagnosis),
+          treatment: encrypt(input.treatment),
+          attending_medic_id: input.attending_medic_id,
+          vital_signs: vitalSigns ?? undefined,
+          drugs_dispensed: input.drugs_dispensed ?? [],
+        },
+      })
+
+      if (input.drugs_dispensed?.length) {
+        for (const drug of input.drugs_dispensed) {
+          if (!drug.drug_id) continue
+          const updated = await tx.drugInventory.update({
+            where: { drug_id: drug.drug_id, quantity_in_stock: { gte: drug.quantity_dispensed } },
+            data: { quantity_in_stock: { decrement: drug.quantity_dispensed } },
+          })
+          if (updated.quantity_in_stock < 0) {
+            throw new Error(`Insufficient stock for drug: ${drug.drug_name}`)
+          }
+        }
+      }
+
+      return record
     })
 
-    if (input.drugs_dispensed?.length) {
-      for (const drug of input.drugs_dispensed) {
-        if (!drug.drug_id) continue
-        await prisma.drugInventory.update({
-          where: { drug_id: drug.drug_id },
-          data: { quantity_in_stock: { decrement: drug.quantity_dispensed } },
-        })
-      }
-    }
-
-    return { success: true, data: { patient_id: record.patient_id } }
+    return { success: true, data: { patient_id: result.patient_id } }
   } catch {
     return { success: false, error: 'Could not save patient record.', code: 'PATIENT_CREATE_FAILED' }
   }

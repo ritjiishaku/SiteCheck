@@ -5,6 +5,7 @@ import { generateExcel } from './excel.service'
 import { sendReportEmail } from './email.service'
 import { format } from 'date-fns'
 import { prisma } from '@/lib/db'
+import { decrypt } from '@/lib/encryption'
 
 interface GenerateReportInput {
   generated_by: string
@@ -64,12 +65,12 @@ export async function generate(input: GenerateReportInput): Promise<ServiceResul
     const totalDrugsUsed = Object.values(drugMap)
 
     const patientRows = patients.map((p) => ({
-      full_name: p.full_name,
+      full_name: decrypt(p.full_name),
       staff_code: p.staff_code,
       department: p.department,
       date_of_visit: format(p.date_of_visit, 'dd/MM/yyyy'),
-      diagnosis: p.diagnosis,
-      treatment: p.treatment,
+      diagnosis: decrypt(p.diagnosis),
+      treatment: decrypt(p.treatment),
     }))
 
     const reportData = {

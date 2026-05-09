@@ -114,11 +114,11 @@ describe('DrugService', () => {
 
       vi.mocked(prisma.drugInventory.update).mockResolvedValue(mockDrug({ quantity_in_stock: 150 }))
 
-      const result = await restockDrug('d1', 50)
+      const result = await restockDrug('d1', 'TestCo', 50)
       expect(result.success).toBe(true)
       expect(prisma.drugInventory.update).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { drug_id: 'd1' },
+          where: { drug_id: 'd1', company_name: 'TestCo' },
           data: expect.objectContaining({
             quantity_in_stock: { increment: 50 },
             last_restocked_at: expect.any(Date),

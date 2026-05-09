@@ -7,6 +7,7 @@ import type { ReactNode } from 'react'
 import { Menu, X, LogOut, Wifi, WifiOff, Lock, UserPlus, FileText, LayoutDashboard, Pill, FileSpreadsheet, Settings, Shield } from 'lucide-react'
 import { useIdleTimer } from '@/hooks/useIdleTimer'
 import { OfflineBanner } from '@/components/ui/OfflineBanner'
+import { flushSyncQueue } from '@/lib/offline/syncManager'
 
 interface Props {
   children: ReactNode
@@ -53,10 +54,11 @@ export function DashboardLayout({ children, title, medicName, role, companyName 
   const [isOnline, setIsOnline] = useState(() => typeof window !== 'undefined' ? navigator.onLine : true)
 
   useEffect(() => {
-    const goOnline = () => setIsOnline(true)
+    const goOnline = () => { setIsOnline(true); flushSyncQueue() }
     const goOffline = () => setIsOnline(false)
     window.addEventListener('online', goOnline)
     window.addEventListener('offline', goOffline)
+    flushSyncQueue()
     return () => {
       window.removeEventListener('online', goOnline)
       window.removeEventListener('offline', goOffline)

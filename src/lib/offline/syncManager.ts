@@ -1,3 +1,5 @@
+import { encryptClient, decryptClient } from './clientEncrypt'
+
 export interface SyncQueueItem {
   id?: number
   url: string
@@ -29,7 +31,8 @@ export async function addToSyncQueue(item: Omit<SyncQueueItem, 'created_at' | 'i
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readwrite')
     const store = tx.objectStore(STORE_NAME)
-    const request = store.add({ ...item, created_at: new Date().toISOString() })
+    const encrypted = encryptClient(JSON.stringify(item.payload))
+    const request = store.add({ ...item, payload: encrypted, created_at: new Date().toISOString() })
     request.onerror = () => reject(request.error)
     request.onsuccess = () => resolve()
   })
@@ -42,7 +45,19 @@ export async function getSyncQueue(): Promise<SyncQueueItem[]> {
     const store = tx.objectStore(STORE_NAME)
     const request = store.getAll()
     request.onerror = () => reject(request.error)
-    request.onsuccess = () => resolve(request.result)
+    request.onsuccess = () => {
+      const items = request.result as SyncQueueItem[]
+      for (const item of items) {
+        if (typeof item.payload === 'string') {
+          try {
+            item.payload = JSON.parse(decryptClient(item.payload))
+          } catch {
+            // keep as-is
+          }
+        }
+      }
+      resolve(items)
+    }
   })
 }
 
@@ -72,7 +87,6 @@ export async function flushSyncQueue(): Promise<void> {
         await deleteFromSyncQueue(item.id!)
       } else {
         console.error(`[SyncManager] Sync failed for ${item.url} with status ${res.status}`)
-        // We stop flushing on the first hard failure to maintain order
         if (res.status >= 500) break;
       }
     } catch (err) {
